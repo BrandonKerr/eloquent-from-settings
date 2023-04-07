@@ -1,0 +1,54 @@
+{
+    "name": "brandonkerr/eloquent-from-settings",
+    "description": "Easily generate eloquent models and relationships from JSON or array",
+    "keywords": [
+      "laravel",
+      "eloquent",
+      "database",
+      "factory",
+      "settings"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Brandonkerr\\EloquentFromSettings\\": "src/"
+        }
+    },
+  "autoload-dev": {
+    "psr-4": {
+      "Brandonkerr\\EloquentFromSettings\\Tests\\": "tests/"
+    }
+  },
+    "require": {
+        "php": "^8.1",
+        "illuminate/database": "^9.22|^10.0",
+        "illuminate/support": "^9.22|^10.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.8",
+        "orchestra/testbench": "^8.2",
+        "phpstan/phpstan": "^1.10",
+        "phpunit/phpunit": "^9.6"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+      "sort-packages": true,
+      "preferred-install": "dist",
+      "optimize-autoloader": true
+    },
+  "scripts": {
+    "test": "phpunit",
+    "test:coverage": [
+      "@putenv XDEBUG_MODE=coverage",
+      "composer test -- --coverage-clover=coverage.xml"
+    ],
+    "test:coverage-html": [
+      "@putenv XDEBUG_MODE=coverage",
+      "composer test -- --coverage-html reports"
+    ],
+    "fix": "./vendor/bin/pint",
+    "stan": "./vendor/bin/phpstan analyse"
+  }
+}
