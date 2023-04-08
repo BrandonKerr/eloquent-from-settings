@@ -1,0 +1,29 @@
+name: Coverage
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ $default-branch ]
+  pull_request:
+
+jobs:
+  test:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install Dependencies
+      run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
+    - name: Run Tests
+      run: composer test:coverage
+      
+    - name: Generate coverage report
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: true
