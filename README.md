@@ -1,8 +1,9 @@
 # Eloquent From Settings
 
-<p>
-<!-- TODO Badges -->
-</p>
+[![Packagist Version](https://img.shields.io/packagist/v/BrandonKerr/eloquent-from-settings?label=Release)](https://packagist.org/packages/brandonkerr/eloquent-from-settings)
+[![Tests](https://github.com/BrandonKerr/eloquent-from-settings/actions/workflows/test.yml/badge.svg)](https://github.com/BrandonKerr/eloquent-from-settings/actions/workflows/test.yml)
+[![Static Analysis](https://github.com/BrandonKerr/eloquent-from-settings/actions/workflows/static-analysis.yml/badge.svg)](https://github.com/BrandonKerr/eloquent-from-settings/actions/workflows/static-analysis.yml)
+[![codecov](https://codecov.io/gh/BrandonKerr/eloquent-from-settings/branch/main/graph/badge.svg?token=6IL80QG3LK)](https://codecov.io/gh/BrandonKerr/eloquent-from-settings)
 
 This package allows you to easily build Eloquent models and their relationships, through data settings via array or 
 JSON passed to the model's factory.
