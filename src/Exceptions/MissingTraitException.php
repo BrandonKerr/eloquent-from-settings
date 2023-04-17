@@ -1,6 +1,6 @@
 <?php
 
-namespace Brandonkerr\EloquentFromSettings\Tests\Stubs\Exceptions;
+namespace Brandonkerr\EloquentFromSettings\Exceptions;
 
 use Exception;
 
