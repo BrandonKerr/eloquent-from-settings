@@ -43,6 +43,68 @@ class UserFactory extends Factory
 }
 ```
 
+## Configuration
+
+By default, the `FromSettings` trait behaves strictly and will throw: 
+- a `MissingTraitException` if a keyed relationship does not use the FromSettings trait
+- an `UnknownKeyException` if a key cannot be matched to an attribute, relationship, or function
+
+While this is the recommended behaviour to ensure data integrity, you have the freedom to change these settings.
+
+If you would like to allow for a keyed relationship that **does not** use the FromSettings trait, you can either set the
+`$throwsMissingTraitException` property to false:
+```php
+class FooFactory extends Factory
+{
+    use FromSettings;
+    
+    public bool $throwsMissingTraitException = false;
+    
+    // ...
+}
+```
+or for a customized logic, implement `FromSettingsInterface` and complete the `getThrowsMissingTraitException()` function:
+```php
+class BarFactory extends Factory implements FromSettingsInterface
+{
+    use FromSettings;
+    
+    public function getThrowsMissingTraitException(): bool
+    {
+        return $this->someCustomSettingOrLogic;
+    }
+    
+    // ...
+}
+```
+
+If you would like to allow for unknown keys to be silently dropped, you can either set the `$throwsUnknownKeyException`
+property to false:
+```php
+class FooFactory extends Factory
+{
+    use FromSettings;
+    
+    public bool $throwsUnknownKeyException = false;
+    
+    // ...
+}
+```
+or for a customized logic, implement `FromSettingsInterface` and complete the `getThrowsUnknownKeyException()` function:
+```php
+class BarFactory extends Factory implements FromSettingsInterface
+{
+    use FromSettings;
+    
+    public function getThrowsUnknownKeyException(): bool
+    {
+        return $this->someCustomSettingOrLogic;
+    }
+    
+    // ...
+}
+```
+
 ## Usage
 
 Simply pass the desired settings via array to the factor's `fromSettingsArray` function:

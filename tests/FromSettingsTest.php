@@ -2,7 +2,10 @@
 
 namespace Brandonkerr\EloquentFromSettings\Tests;
 
-use Brandonkerr\EloquentFromSettings\Tests\Stubs\Exceptions\MissingTraitException;
+use BadMethodCallException;
+use Brandonkerr\EloquentFromSettings\Contracts\FromSettingsInterface;
+use Brandonkerr\EloquentFromSettings\Exceptions\MissingTraitException;
+use Brandonkerr\EloquentFromSettings\Exceptions\UnknownKeyException;
 use Brandonkerr\EloquentFromSettings\Tests\Stubs\Models\Author;
 use Brandonkerr\EloquentFromSettings\Tests\Stubs\Models\Book;
 use Brandonkerr\EloquentFromSettings\Traits\FromSettings;
@@ -10,6 +13,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 class FromSettingsTest extends PackageTestCase
 {
@@ -26,8 +31,6 @@ class FromSettingsTest extends PackageTestCase
             "books" => [
                 [
                     "title" => "Bob's First Book",
-                    // foo is not an attribute nor relationship and will be thrown away
-                    "foo" => "Bar",
                     "reviews" => [
                         [
                             "reviewer" => "Jane Doe",
@@ -80,7 +83,6 @@ class FromSettingsTest extends PackageTestCase
            "books":[
               {
                  "title":"Bob\'s First Book",
-                 "foo":"Bar",
                  "reviews":[
                     {
                        "reviewer":"Jane Doe",
@@ -330,6 +332,72 @@ class FromSettingsTest extends PackageTestCase
         $this->expectException(MissingTraitException::class);
         Foo::factory()->fromSettingsArray(...$data)->create();
     }
+
+    /**
+     * Ensure that a MissingTraitException exception is not thrown if a relationship's factory does not
+     * use the FromSettings trait, but the parent has set throwsUnknownKeyException to false
+     *
+     * @return void
+     * @test
+     */
+    public function ignoresExceptionWhenNestedRelationshipDoesNotUseTraitAndParentDoesNotThrowException(): void
+    {
+        $data = [
+            "name" => "Baz",
+            "bar" => [
+                "name" => "Bar",
+            ],
+        ];
+
+        // base BadMethodCallException will be thrown because the fromSettingsArray() function doesn't exist on Bar class
+        $this->expectException(BadMethodCallException::class);
+        Baz::factory()->fromSettingsArray(...$data)->create();
+    }
+
+    /**
+     * Ensure that an UnknownKeyException exception is thrown if a setting key does not match an attribute,
+     * relationship, or function
+     *
+     * @return void
+     * @test
+     */
+    public function throwsExceptionWhenSettingKeyIsNotFound(): void
+    {
+        $data = [
+            "name" => "Foo",
+            // age is not a known key
+            "age" => 100,
+        ];
+
+        $this->expectException(UnknownKeyException::class);
+        Foo::factory()->fromSettingsArray(...$data)->create();
+    }
+
+    /**
+     * Ensure that an UnknownKeyException exception is not thrown if a setting key does not match an attribute,
+     * relationship, or function, but the class has set throwsUnknownKeyException to false
+     *
+     * @return void
+     * @test
+     */
+    public function ignoresExceptionWhenSettingKeyIsNotFoundAndFactoryDoesNotThrowException(): void
+    {
+        Schema::create("bazs", function (Blueprint $table) {
+            $table->id();
+            $table->string("name")->unique();
+            $table->timestamps();
+        });
+
+        $data = [
+            "name" => "Baz",
+            // age is not a known key
+            "age" => 100,
+        ];
+
+        $baz = Baz::factory()->fromSettingsArray(...$data)->create();
+        $this->assertSame("Baz", $baz->name);
+        $this->assertNull($baz->age);
+    }
 }
 
 class Foo extends Model
@@ -350,6 +418,10 @@ class Foo extends Model
     {
         return $this->hasOne(Bar::class);
     }
+
+    protected $fillable = [
+        "name"
+    ];
 }
 
 class FooFactory extends Factory
@@ -369,6 +441,54 @@ class FooFactory extends Factory
             "name" => $this->faker->name,
         ];
     }
+}
+
+class Baz extends Model
+{
+    use HasFactory;
+
+    /**
+     * Create a new factory instance for the model.
+     *
+     * @return BazFactory
+     */
+    protected static function newFactory(): BazFactory
+    {
+        return BazFactory::new();
+    }
+
+    public function bar(): HasOne
+    {
+        return $this->hasOne(Bar::class);
+    }
+
+    protected $fillable = [
+        "name"
+    ];
+}
+
+class BazFactory extends Factory implements FromSettingsInterface
+{
+    use FromSettings;
+
+    protected $model = Baz::class;
+
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, string>
+     */
+    public function definition(): array
+    {
+        return [
+            "name" => $this->faker->name,
+        ];
+    }
+
+
+    // DOES NOT throw exceptions
+    public bool $throwsUnknownKeyException = false;
+    public bool $throwsMissingTraitException = false;
 }
 
 class Bar extends Model

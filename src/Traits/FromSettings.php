@@ -2,9 +2,10 @@
 
 namespace Brandonkerr\EloquentFromSettings\Traits;
 
+use Brandonkerr\EloquentFromSettings\Exceptions\UnknownKeyException;
 use Brandonkerr\EloquentFromSettings\Helpers\FindMethods;
 use Brandonkerr\EloquentFromSettings\Helpers\FindRelations;
-use Brandonkerr\EloquentFromSettings\Tests\Stubs\Exceptions\MissingTraitException;
+use Brandonkerr\EloquentFromSettings\Exceptions\MissingTraitException;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -20,6 +21,28 @@ trait FromSettings
     protected array $customMethods = [];
 
     /**
+     * Get whether this class will throw a MissingTraitException if a keyed relationship does not use
+     * the FromSettings trait
+     *
+     * @return bool
+     */
+    public function getThrowsMissingTraitException(): bool
+    {
+        return $this->throwsMissingTraitException ?? true;
+    }
+
+    /**
+     * Get whether this class will throw an UnknownKeyException if a key cannot be matched to an
+     * attribute, relationship, or function
+     *
+     * @return bool
+     */
+    public function getThrowsUnknownKeyException(): bool
+    {
+        return $this->throwsUnknownKeyException ?? true;
+    }
+
+    /**
      * Use the provided settings to fill this factory's
      * model class' fillable attributes, to generate any related
      * models with the given attributes and nested relationships,
@@ -31,6 +54,7 @@ trait FromSettings
      * @return Factory
      * @throws MissingTraitException
      * @throws ReflectionException
+     * @throws UnknownKeyException
      */
     public function fromSettingsArray(mixed ...$settings): Factory
     {
@@ -50,6 +74,7 @@ trait FromSettings
      * @throws JsonException
      * @throws MissingTraitException
      * @throws ReflectionException
+     * @throws UnknownKeyException
      */
     public function fromSettingsJson(string $settings): Factory
     {
@@ -70,6 +95,7 @@ trait FromSettings
      * @return Factory
      * @throws ReflectionException
      * @throws MissingTraitException
+     * @throws UnknownKeyException
      */
     private function fromSettings(mixed ...$settings): Factory
     {
@@ -94,7 +120,7 @@ trait FromSettings
                         // get the related class, so we can call its factory and chain its fromSettings
                         $relationClass = get_class($model->$relationship()->getRelated());
 
-                        if (! method_exists(($relationClass)::factory(), "fromSettings")) {
+                        if (! method_exists(($relationClass)::factory(), "fromSettings") && $this->getThrowsMissingTraitException()) {
                             throw new MissingTraitException(sprintf("%s must use the FromSettings trait", $relationClass));
                         }
 
@@ -132,6 +158,7 @@ trait FromSettings
      *
      * @return void
      * @throws ReflectionException
+     * @throws UnknownKeyException
      */
     protected function parseSettings(...$settings): void
     {
@@ -165,6 +192,16 @@ trait FromSettings
             if ($factoryMethods->contains($key)) {
                 $this->customMethods[$key] = $value;
                 continue;
+            }
+
+            if ($this->getThrowsUnknownKeyException()) {
+                throw new UnknownKeyException(
+                    sprintf(
+                        "%s does not match any defined fillable attribute, relationship, or custom function for the %s class or its model",
+                        $key,
+                        class_basename($this)
+                    )
+                );
             }
         }
     }
